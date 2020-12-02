@@ -728,6 +728,11 @@ def generate_config(drug_encoding = None, target_encoding = None,
 					rnn_target_hid_dim = 64,
 					rnn_target_n_layers = 2,
 					rnn_target_bidirectional = True,
+					inspire_activation = 'elu',
+            		CNN_inspire_filters = 128,
+            		protein_strides = [10, 15, 20, 25, 30],
+            		inspire_dropout = 0.2,
+            		protein_layers = [128],
 					num_workers = 0                    
 					):
 
@@ -828,6 +833,13 @@ def generate_config(drug_encoding = None, target_encoding = None,
 		base_config['transformer_attention_probs_dropout'] = transformer_attention_probs_dropout
 		base_config['transformer_hidden_dropout_rate'] = transformer_hidden_dropout_rate
 		base_config['hidden_dim_protein'] = transformer_emb_size_target
+	elif target_encoding is 'CNN_inspire':
+		base_config['inspire_activation'] = inspire_activation
+		base_config['CNN_inspire_filters'] = CNN_inspire_filters
+		base_config['protein_strides'] = protein_strides
+		base_config['inspire_dropout'] = inspire_dropout
+		base_config['protein_layers'] = protein_layers
+		base_config['hidden_dim_protein'] = protein_layers[-1]
 	elif target_encoding is None:
 		pass
 	else:
