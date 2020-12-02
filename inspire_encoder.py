@@ -37,7 +37,7 @@ class InspireEncoder(nn.Sequential):
     #     return f
 
     def __init__(self, **config):
-        super(DeepConvDTI, self).__init__()
+        super(InspireEncoder, self).__init__()
 
         self.emb = nn.Embedding(26, 20)
         nn.init.xavier_uniform(self.emb.weight)
