@@ -257,6 +257,8 @@ class DBTA:
 			self.model_protein = CNN_RNN('protein', **config)
 		elif target_encoding == 'Transformer':
 			self.model_protein = transformer('protein', **config)
+		elif target_encoding == 'CNN_inspire':
+			self.model_protein = CNN_inspire('protein', **config)
 		else:
 			raise AttributeError('Please use one of the available encoding method.')
 

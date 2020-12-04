@@ -728,10 +728,20 @@ def generate_config(drug_encoding = None, target_encoding = None,
 					rnn_target_hid_dim = 64,
 					rnn_target_n_layers = 2,
 					rnn_target_bidirectional = True,
-					num_workers = 0                    
+					num_workers = 0,
+					inspire_protein_layers = [128],
+					inspire_dropout_rate = 0.2,
+					inspire_activation = 'RELU',
+					cnn_inspire_filters = 128,
+					inspire_protein_strides = [10, 15, 20, 25, 30]
 					):
 
-	base_config = {'input_dim_drug': input_dim_drug,
+	base_config = { 
+					# 'inspire_protein_layers' : inspire_protein_layers,
+					# 'inspire_dropout_rate' : inspire_dropout_rate,
+					# 'inspire_activation' : inspire_activation,
+					# 'cnn_inspire_filters'
+					'input_dim_drug': input_dim_drug,
 					'input_dim_protein': input_dim_protein,
 					'hidden_dim_drug': hidden_dim_drug, # hidden dim of drug
 					'hidden_dim_protein': hidden_dim_protein, # hidden dim of protein
@@ -828,6 +838,12 @@ def generate_config(drug_encoding = None, target_encoding = None,
 		base_config['transformer_attention_probs_dropout'] = transformer_attention_probs_dropout
 		base_config['transformer_hidden_dropout_rate'] = transformer_hidden_dropout_rate
 		base_config['hidden_dim_protein'] = transformer_emb_size_target
+	elif target_encoding == 'CNN_inspire':
+		base_config['inspire_protein_layers'] = inspire_protein_layers
+		base_config['inspire_dropout_rate'] = inspire_dropout_rate
+		base_config['inspire_activation'] = inspire_activation
+		base_config['cnn_inspire_filters'] = cnn_inspire_filters
+		base_config['inspire_protein_strides'] = inspire_protein_strides
 	elif target_encoding is None:
 		pass
 	else:
