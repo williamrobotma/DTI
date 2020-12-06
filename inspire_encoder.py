@@ -87,15 +87,22 @@ class InspireEncoder(nn.Sequential):
         
 
     def forward(self, feature):
+        # print(feature.shape)
         feature = self.emb(feature.long().to(device))
+        # print(feature.shape)
         feature = self.embedding_dropout(feature)
+        # print(feature.shape)
         feature = torch.transpose(feature, 1, 2)
-        feature = [torch.max(conv(feature), 2)[0] for conv in self.convs]
+        # print(feature.shape)
+        feature = [torch.max(conv(feature), dim=2)[0] for conv in self.convs]
+        # print(len(feature), feature[0].shape)
         # print(feature)
         feature = torch.cat(feature, axis=1)
+        # print(feature.shape)
         if self.fc:
             for i, l in enumerate(self.fc):
                 feature = l(feature)
+        # print(feature.shape)
         return feature
     
     

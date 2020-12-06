@@ -136,4 +136,5 @@ data/**
 
 **.code-workspace
 
+models/
 result/
