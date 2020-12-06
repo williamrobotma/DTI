@@ -317,7 +317,7 @@ class DBTA:
 				return y_pred
 			return mean_squared_error(y_label, y_pred), pearsonr(y_label, y_pred)[0], pearsonr(y_label, y_pred)[1], concordance_index(y_label, y_pred), y_pred
 
-	def train(self, train, val, test = None, verbose = True):
+	def train(self, train, val, test = None, verbose = True, drop_last=False):
 		if len(train.Label.unique()) == 2:
 			self.binary = True
 			self.config['binary'] = True
@@ -353,7 +353,7 @@ class DBTA:
 		params = {'batch_size': BATCH_SIZE,
 	    		'shuffle': True,
 	    		'num_workers': self.config['num_workers'],
-	    		'drop_last': False}
+	    		'drop_last': drop_last}
 		if (self.drug_encoding == "MPNN"):
 			params['collate_fn'] = mpnn_collate_func
 

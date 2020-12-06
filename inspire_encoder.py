@@ -40,7 +40,7 @@ class InspireEncoder(nn.Sequential):
         super(InspireEncoder, self).__init__()
 
         self.emb = nn.Embedding(26, 20)
-        nn.init.xavier_uniform(self.emb.weight)
+        torch.nn.init.xavier_uniform_(self.emb.weight)
 
         self.embedding_dropout = nn.Dropout2d(0.2)
 
@@ -54,10 +54,10 @@ class InspireEncoder(nn.Sequential):
                 activation = nn.ELU()
             network = nn.Sequential(
                 nn.Conv1d(in_channels=20, out_channels=config['CNN_inspire_filters'], kernel_size=stride_size, padding=stride_size // 2),
-                nn.BatchNorm1d(config['CNN_inspire_filters'], eps=0.001, momentum=0.99),
+                nn.BatchNorm1d(config['CNN_inspire_filters'], eps=1e-5, momentum=0.99),
                 activation,
             )
-            nn.init.xavier_uniform(network[0].weight)
+            torch.nn.init.xavier_uniform_(network[0].weight)
 
             self.convs.append(network)
 
@@ -80,7 +80,7 @@ class InspireEncoder(nn.Sequential):
                     activation,
                     nn.Dropout(config['inspire_dropout'])
                 )
-                nn.init.xavier_uniform(network[0].weight)
+                torch.nn.init.xavier_uniform_(network[0].weight)
                 self.fc.append(network)
         
 
