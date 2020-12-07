@@ -468,7 +468,7 @@ class DBTA:
 		if save_path is not None:
 			self.save_model(save_path)
 		
-		with pytorch.no_grad():
+		with torch.no_grad():
 			torch.cuda.empty_cache()
 
 		#### after training 
