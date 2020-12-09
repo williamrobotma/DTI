@@ -348,7 +348,7 @@ def encode_drug(df_data, drug_encoding, column_name = 'SMILES', save_column_name
 #     else:
 #         return [seq_dic[aa] for aa in seq]
 
-def encode_protein(df_data, target_encoding, column_name = 'Target Sequence', save_column_name = 'target_encoding'):
+def encode_protein(df_data, target_encoding, column_name = 'Target Sequence', save_column_name = 'target_encoding', cnn_inspire_use_transformer_embedding=False):
 	print('encoding protein...')
 	print('unique target sequence: ' + str(len(df_data[column_name].unique())))
 	if target_encoding == 'AAC':
@@ -382,7 +382,10 @@ def encode_protein(df_data, target_encoding, column_name = 'Target Sequence', sa
 		# the embedding is large and not scalable but quick, so we move to encode in dataloader batch. 
 	elif target_encoding == 'CNN_inspire':
 		max_p =  df_data[column_name].map(len).max()
-		AA = pd.Series(df_data[column_name].unique()).apply(lambda x: protein2emb_encoder_inspire(x, max_p))
+		if cnn_inspire_use_transformer_embedding:
+			AA = pd.Series(df_data[column_name].unique()).apply(protein2emb_encoder_inspire_transformer)
+		else:
+			AA = pd.Series(df_data[column_name].unique()).apply(lambda x: protein2emb_encoder_inspire(x, max_p))
 		AA_dict = dict(zip(df_data[column_name].unique(), AA))
 		df_data[save_column_name] = [AA_dict[i] for i in df_data[column_name]]
         # df_data[save_column_name] = df_data[save_column_name].map(lambda a: encodeSeq(a, seq_dic))
@@ -399,7 +402,8 @@ def encode_protein(df_data, target_encoding, column_name = 'Target Sequence', sa
 	return df_data
 
 def data_process(X_drug = None, X_target = None, y=None, drug_encoding=None, target_encoding=None, 
-				 split_method = 'random', frac = [0.7, 0.1, 0.2], random_seed = 1, sample_frac = 1, mode = 'DTI', X_drug_ = None, X_target_ = None):
+				 split_method = 'random', frac = [0.7, 0.1, 0.2], random_seed = 1, sample_frac = 1, mode = 'DTI', X_drug_ = None, X_target_ = None,
+				 cnn_inspire_use_transformer_embedding=False):
 	
 	if random_seed == 'TDC':
 		random_seed = 1234
@@ -483,7 +487,7 @@ def data_process(X_drug = None, X_target = None, y=None, drug_encoding=None, tar
 
 	if DTI_flag:
 		df_data = encode_drug(df_data, drug_encoding)
-		df_data = encode_protein(df_data, target_encoding)
+		df_data = encode_protein(df_data, target_encoding, cnn_inspire_use_transformer_embedding=cnn_inspire_use_transformer_embedding)
 	elif DDI_flag:
 		df_data = encode_drug(df_data, drug_encoding, 'SMILES 1', 'drug_encoding_1')
 		df_data = encode_drug(df_data, drug_encoding, 'SMILES 2', 'drug_encoding_2')
@@ -728,6 +732,7 @@ def generate_config(drug_encoding = None, target_encoding = None,
 					rnn_target_hid_dim = 64,
 					rnn_target_n_layers = 2,
 					rnn_target_bidirectional = True,
+					cnn_inspire_use_transformer_embedding=False,
 					inspire_activation = 'elu',
             		CNN_inspire_filters = 128,
             		protein_strides = [10, 15, 20, 25, 30],
@@ -840,6 +845,7 @@ def generate_config(drug_encoding = None, target_encoding = None,
 		base_config['inspire_dropout'] = inspire_dropout
 		base_config['protein_layers'] = protein_layers
 		base_config['hidden_dim_protein'] = protein_layers[-1]
+		base_config['cnn_inspire_use_transformer_embedding'] = cnn_inspire_use_transformer_embedding
 	elif target_encoding is None:
 		pass
 	else:
@@ -897,9 +903,26 @@ def protein2emb_encoder_inspire(x, max_p):
     l = len(i1)
    
     i = np.pad(i1, (0, max_p - l), 'constant', constant_values = 0)
-    # input_mask = ([1] * l) + ([0] * (max_p - l))
+    input_mask = ([1] * l) + ([0] * (max_p - l))
+	
         
-    return i # , np.asarray(input_mask)
+    return i
+def protein2emb_encoder_inspire_transformer(x):
+    max_p = 545
+    t1 = pbpe.process_line(x).split()  # split
+    try:
+        i1 = np.asarray([words2idx_p[i] for i in t1])  # index
+    except:
+        i1 = np.array([0])
+
+    l = len(i1)
+   
+    if l < max_p:
+        i = np.pad(i1, (0, max_p - l), 'constant', constant_values = 0)
+    else:
+        i = i1[:max_p]
+        
+    return i
 
 def drug2emb_encoder(x):
 

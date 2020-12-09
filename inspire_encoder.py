@@ -39,7 +39,11 @@ class InspireEncoder(nn.Sequential):
     def __init__(self, **config):
         super(InspireEncoder, self).__init__()
 
-        self.emb = nn.Embedding(26, 20)
+        if config['cnn_inspire_use_transformer_embedding']:
+            self.emb = nn.Embedding(config['input_dim_protein'], 20)
+        else:
+            self.emb = nn.Embedding(26, 20)
+
         torch.nn.init.xavier_uniform_(self.emb.weight)
 
         self.embedding_dropout = nn.Dropout2d(0.2)
