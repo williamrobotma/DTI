@@ -844,7 +844,10 @@ def generate_config(drug_encoding = None, target_encoding = None,
 		base_config['protein_strides'] = protein_strides
 		base_config['inspire_dropout'] = inspire_dropout
 		base_config['protein_layers'] = protein_layers
-		base_config['hidden_dim_protein'] = protein_layers[-1]
+		if len(protein_layers) > 0:
+			base_config['hidden_dim_protein'] = protein_layers[-1]
+		else:
+			base_config['hidden_dim_protein'] = CNN_inspire_filters*len(protein_strides)
 		base_config['cnn_inspire_use_transformer_embedding'] = cnn_inspire_use_transformer_embedding
 	elif target_encoding is None:
 		pass

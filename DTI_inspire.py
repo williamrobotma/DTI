@@ -63,10 +63,12 @@ def model_initialize(**config):
 	model = DBTA(**config)
 	return model
 
-def model_pretrained(path_dir = None, model = None):
+def model_pretrained(path_dir = None, model = None, result_folder = None):
 	if model is not None:
 		path_dir = download_pretrained_model(model)
 	config = load_dict(path_dir)
+	if result_folder:
+		config['result_folder'] = result_folder
 	model = DBTA(**config)
 	model.load_pretrained(path_dir + '/model.pt')    
 	return model
@@ -395,7 +397,8 @@ class DBTA:
 		float2str = lambda x:'%0.4f'%x
 		if verbose:
 			print('--- Go for Training ---')
-		t_start = time() 
+		t_start = time()
+		early_stops = 0
 		for epo in range(train_epoch):
 			for i, (v_d, v_p, label) in enumerate(training_generator):
 				if self.target_encoding == 'Transformer':
@@ -453,13 +456,18 @@ class DBTA:
 					mse, r2, p_val, CI, logits = self.test_(validation_generator, self.model)
 					lst = ["epoch " + str(epo)] + list(map(float2str,[mse, r2, p_val, CI]))
 					valid_metric_record.append(lst)
+					early_stops = early_stops + 1
 					if mse < max_MSE:
 						model_max = copy.deepcopy(self.model)
 						max_MSE = mse
+						early_stops = 0
 					if verbose:
 						print('Validation at Epoch '+ str(epo + 1) + ' , MSE: ' + str(mse)[:7] + ' , Pearson Correlation: '\
 						 + str(r2)[:7] + ' with p-value: ' + str(p_val)[:7] +' , Concordance Index: '+str(CI)[:7])
 			table.add_row(lst)
+
+			if early_stops >= 3:
+				break
 
 
 		# load early stopped model

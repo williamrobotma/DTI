@@ -86,6 +86,7 @@ class InspireEncoder(nn.Sequential):
                 )
                 torch.nn.init.xavier_uniform_(network[0].weight)
                 self.fc.append(network)
+        else: self.fc = None
         
 
         

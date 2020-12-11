@@ -1,5 +1,5 @@
-""" File: G#_predict.py
-Developer(s): <first-name>, <second-name>
+""" File: G35_predict.py
+Developer(s): William, Ma
 Date: <date-you-submit>
 ---
 Description: This is a prediction script that
@@ -9,11 +9,18 @@ continuous log-transformed binding affinity.
 import pandas as pd
 import numpy as np
 import pickle as pkl
-from DeepPurpose.utils import *
+# from DeepPurpose.utils import *
 # TODO: Include any other librariies you might need. 
 #       Comment the version used (e.g. use 'pip freeze' command)
+import DTI_inspire as models # It is important that this is imported AFTER DeepPurpose
+from utils_inspire import * # It is important that this is imported AFTER DeepPurpose
+from torch.utils.data import SequentialSampler
+import torch
+# Python version 3.7.9
+# pytorch=1.4.0, torchvision=0.5.0
 
-def _load_model(filename='G#_model.pkl'):
+
+def _load_model(model_path='G35_model'):
     """ _load_model
        Helper function that loads the trained model, unpickles it,
        and returns it to generate predictions.
@@ -22,7 +29,8 @@ def _load_model(filename='G#_model.pkl'):
        Output: <model obj>, the deserialized model
     """
     # TODO: Change the default filename to your group id
-    return pkl.load(open(filename, "rb"))
+    model = models.model_pretrained(path_dir=model_path)
+    return model 
 
 def encode_pairs(df_pairs):
     """ encode_pairs
@@ -42,12 +50,26 @@ def encode_pairs(df_pairs):
                the encoded representations: "drug_encoding" and 
                "target_encoding".
     """
+
+    # drug_encoding, target_encoding = 'Transformer', 'CNN_inspire'
+    # train, val, test  = data_process(df_pairs['SMILES'].to_numpy(), df_pairs['Target Sequence'].to_numpy(), df_pairs['Label'], 
+    #                   drug_encoding, target_encoding, 
+    #                   split_method='cold_protein',frac=[1.0, 0.0, 0.0],
+    #                   cnn_inspire_use_transformer_embedding=False, # new embedding set
+    #                   random_seed = 42)
+
+    # assert len(train) == len(df_pairs)
+
+    # train = train.rename(columns={'Label':'Labels'})
     df_encode = df_pairs.copy()
-    # TODO: Implement the necessary encoding method here
+    drug_encoding, target_encoding = 'Transformer', 'CNN_inspire'
+    df_encode = encode_drug(df_encode, drug_encoding)
+    df_encode = encode_protein(df_encode, target_encoding, cnn_inspire_use_transformer_embedding=False)
+
     return df_encode
 
 
-def predict_pairs(df_encode):
+def predict_pairs(df_encode, batch_size=1):
     """ predict_pairs
         For all pairs in a dataframe containing drug and target encodings,
         the pretrained model is used to generate a predicted binding afinity
@@ -65,6 +87,49 @@ def predict_pairs(df_encode):
     # TODO: Implement any required processing to generate predictions with your model.
     #       For example, concatenate the representations if that is required by your
     #       model. Then generate a score for each pair in the dataframe (e.g. a loop).
+    
+    device = 'cpu'
+    if torch.cuda.is_available():
+        device = 'cuda'
+
+    model.model.to(device)
+    model.model.eval()
+
+
+    info = data_process_loader(df_results.index.values, df_results.Label.values, df_results, **model.config)
+
+    params = {'batch_size': batch_size,
+            'shuffle': False,
+            'num_workers': 0,
+            'drop_last': False,
+            'sampler':SequentialSampler(info)}
+
+
+    generator = data.DataLoader(info, **params)
+
+    y_pred = []
+    # y_label = []
+
+    for i, (v_d, v_p, label) in enumerate(generator):
+
+        # print(v_d)
+        # print(v_p)
+        # print(label)
+        v_d = v_d           
+
+        v_p = v_p.float().to(device)                
+        score = model.model(v_d, v_p)
+
+        logits = torch.squeeze(score).detach().cpu().numpy()
+        # label_ids = torch.from_numpy(np.asarray(label)).to('cpu').numpy()
+        # label_ids = label.to('cpu').numpy()
+        # y_label = y_label + label_ids.flatten().tolist()
+        y_pred = y_pred + logits.flatten().tolist()
+
+    df_results['predicted'] = y_pred
+    # df_results['new_label'] = y_label
+
+
     return df_results
 
 
